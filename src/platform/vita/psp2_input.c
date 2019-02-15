@@ -1,0 +1,319 @@
+#include "psp2_input.h"
+#include "psp2_touch.h"
+#include <math.h>
+#if defined(__vita__)
+#include "psp2_kbdvita.h"
+#define displayWidth 960.0
+#define displayHeight 544.0
+#endif
+
+#if defined(__SWITCH__)
+#include "switch_kbd.h"
+#define displayWidth 1280.0
+#define displayHeight 720.0
+#endif
+#include <math.h>
+
+int lastmx = 0;
+int lastmy = 0;
+
+static SDL_Joystick *joy = NULL;
+
+static int hiresDX = 0;
+static int hiresDY = 0;
+static int left_pressed;
+static int right_pressed;
+static int up_pressed;
+static int down_pressed;
+static int vkbd_requested;
+
+static void PSP2_StartTextInput(char *initial_text, int multiline);
+static void rescaleAnalog(int *x, int *y, int dead);
+
+int PSP2_PollEvent(SDL_Event *event) {
+
+	int ret = SDL_PollEvent(event);
+	if(event != NULL) {
+		PSP2_HandleTouch(event);
+		switch (event->type) {
+			case SDL_MOUSEMOTION:
+				// update joystick / touch mouse coords
+				lastmx = event->motion.x;
+				lastmy = event->motion.y;
+				break;
+			case SDL_JOYBUTTONDOWN:
+				if (event->jbutton.which==0) { // Only Joystick 0 controls the mouse
+					switch (event->jbutton.button) {
+						case PAD_L:
+							event->type = SDL_KEYDOWN;
+							event->key.keysym.sym = SDLK_PAGEDOWN;
+							event->key.keysym.mod = 0;
+							event->key.repeat = 0;
+							break;
+						case PAD_R:
+							event->type = SDL_KEYDOWN;
+							event->key.keysym.sym = SDLK_PAGEUP;
+							event->key.keysym.mod = 0;
+							event->key.repeat = 0;
+							break;
+						case PAD_CROSS:
+							event->type = SDL_MOUSEBUTTONDOWN;
+							event->button.button = SDL_BUTTON_LEFT;
+							event->button.state = SDL_PRESSED;
+							event->button.x = lastmx;
+							event->button.y = lastmy;
+							break;
+						case PAD_CIRCLE:
+							event->type = SDL_MOUSEBUTTONDOWN;
+							event->button.button = SDL_BUTTON_RIGHT;
+							event->button.state = SDL_PRESSED;
+							event->button.x = lastmx;
+							event->button.y = lastmy;
+							break;
+						case PAD_UP:
+							event->type = SDL_KEYDOWN;
+							event->key.keysym.sym = SDLK_UP;
+							event->key.keysym.mod = 0;
+							event->key.repeat = 0;
+							up_pressed = 1;
+							break;
+						case PAD_DOWN:
+							event->type = SDL_KEYDOWN;
+							event->key.keysym.sym = SDLK_DOWN;
+							event->key.keysym.mod = 0;
+							event->key.repeat = 0;
+							down_pressed = 1;
+							break;
+						case PAD_LEFT:
+							event->type = SDL_KEYDOWN;
+							event->key.keysym.sym = SDLK_LEFT;
+							event->key.keysym.mod = 0;
+							event->key.repeat = 0;
+							left_pressed = 1;
+							break;
+						case PAD_RIGHT:
+							event->type = SDL_KEYDOWN;
+							event->key.keysym.sym = SDLK_RIGHT;
+							event->key.keysym.mod = 0;
+							event->key.repeat = 0;
+							right_pressed = 1;
+							break;
+						case PAD_START:
+							vkbd_requested = 1;
+							break;
+						default:
+							break;
+					}
+				}
+				break;
+			case SDL_JOYBUTTONUP:
+				if (event->jbutton.which==0) {// Only Joystick 0 controls the mouse
+					switch (event->jbutton.button) {
+						case PAD_L:
+							event->type = SDL_KEYUP;
+							event->key.keysym.sym = SDLK_PAGEDOWN;
+							event->key.keysym.mod = 0;
+							event->key.repeat = 0;
+							break;
+						case PAD_R:
+							event->type = SDL_KEYUP;
+							event->key.keysym.sym = SDLK_PAGEUP;
+							event->key.keysym.mod = 0;
+							event->key.repeat = 0;
+							break;
+						case PAD_CROSS:
+							event->type = SDL_MOUSEBUTTONUP;
+							event->button.button = SDL_BUTTON_LEFT;
+							event->button.state = SDL_RELEASED;
+							event->button.x = lastmx;
+							event->button.y = lastmy;
+							break;
+						case PAD_CIRCLE:
+							event->type = SDL_MOUSEBUTTONUP;
+							event->button.button = SDL_BUTTON_RIGHT;
+							event->button.state = SDL_RELEASED;
+							event->button.x = lastmx;
+							event->button.y = lastmy;
+							break;
+						case PAD_UP:
+							event->type = SDL_KEYUP;
+							event->key.keysym.sym = SDLK_UP;
+							event->key.keysym.mod = 0;
+							event->key.repeat = 0;
+							up_pressed = 0;
+							break;
+						case PAD_DOWN:
+							event->type = SDL_KEYUP;
+							event->key.keysym.sym = SDLK_DOWN;
+							event->key.keysym.mod = 0;
+							event->key.repeat = 0;
+							down_pressed = 0;
+							break;
+						case PAD_LEFT:
+							event->type = SDL_KEYUP;
+							event->key.keysym.sym = SDLK_LEFT;
+							event->key.keysym.mod = 0;
+							event->key.repeat = 0;
+							left_pressed = 0;
+							break;
+						case PAD_RIGHT:
+							event->type = SDL_KEYUP;
+							event->key.keysym.sym = SDLK_RIGHT;
+							event->key.keysym.mod = 0;
+							event->key.repeat = 0;
+							right_pressed = 0;
+							break;
+						default:
+							break;
+					}
+				}
+			default:
+				break;
+		}
+	}
+	return ret;
+}
+
+void PSP2_HandleRepeatKeys() {
+	if (up_pressed) {
+		SDL_Event event;
+		event.type = SDL_KEYDOWN;
+		event.key.keysym.sym = SDLK_UP;
+		SDL_PushEvent(&event);
+	} else if (down_pressed) {
+		SDL_Event event;
+		event.type = SDL_KEYDOWN;
+		event.key.keysym.sym = SDLK_DOWN;
+		SDL_PushEvent(&event);
+	}
+	if (left_pressed) {
+		SDL_Event event;
+		event.type = SDL_KEYDOWN;
+		event.key.keysym.sym = SDLK_LEFT;
+		SDL_PushEvent(&event);
+	} else if (right_pressed) {
+		SDL_Event event;
+		event.type = SDL_KEYDOWN;
+		event.key.keysym.sym = SDLK_RIGHT;
+		SDL_PushEvent(&event);
+	}
+}
+
+void PSP2_HandleJoystickMouse() {
+	if (!joy) {
+		joy = SDL_JoystickOpen(0);
+	}
+	int analogX = SDL_JoystickGetAxis(joy, 0);
+	int analogY = SDL_JoystickGetAxis(joy, 1);
+	rescaleAnalog( &analogX, &analogY, 3000);
+	hiresDX += analogX;
+	hiresDY += analogY;
+
+	const int slowdown = 2048;
+
+	if (hiresDX != 0 || hiresDY != 0) {
+		int xrel = hiresDX / slowdown;
+		int yrel = hiresDY / slowdown;
+		hiresDX %= slowdown;
+		hiresDY %= slowdown;
+		if (xrel != 0 || yrel !=0) {
+			// limit joystick mouse to screen coords, same as physical mouse
+			int x = lastmx + xrel;
+			int y = lastmy + yrel;
+			if (x < 0) {
+				x = 0;
+				xrel = 0 - lastmx;
+			}
+			if (x > 960) {
+				x = 960;
+				xrel = 960 - lastmx;
+			}
+			if (y < 0) {
+				y = 0;
+				yrel = 0 - lastmy;
+			}
+			if (y > 544) {
+				y = 544;
+				yrel = 544 - lastmy;
+			}
+			SDL_Event event;
+			event.type = SDL_MOUSEMOTION;
+			event.motion.x = x;
+			event.motion.y = y;
+			event.motion.xrel = xrel;
+			event.motion.yrel = yrel;
+			SDL_PushEvent(&event);
+		}
+	}
+}
+
+void PSP2_HandleVirtualKeyboard() {
+	if (vkbd_requested) {
+		vkbd_requested = 0;
+		PSP2_StartTextInput("", 0);
+	}	
+}
+
+static void PSP2_StartTextInput(char *initial_text, int multiline) {
+#ifdef __SWITCH__
+	char text[601] = {'\0'};
+	kbdswitch_get("Enter New Text:", initial_text, 600, multiline, text);
+#else
+	char *text = kbdvita_get("Enter New Text:", initial_text, 600, multiline);
+#endif
+	if (text != NULL)  {
+		for (int i = 0; i < 600; i++) {
+			SDL_Event down_event;
+			down_event.type = SDL_KEYDOWN;
+			down_event.key.keysym.sym = SDLK_BACKSPACE;
+			down_event.key.keysym.mod = 0;
+			SDL_PushEvent(&down_event);
+			SDL_Event up_event;
+			up_event.type = SDL_KEYUP;
+			up_event.key.keysym.sym = SDLK_BACKSPACE;
+			up_event.key.keysym.mod = 0;
+			SDL_PushEvent(&up_event);
+		}
+		for (int i = 0; i < 600; i++) {
+			SDL_Event down_event;
+			down_event.type = SDL_KEYDOWN;
+			down_event.key.keysym.sym = SDLK_DELETE;
+			down_event.key.keysym.mod = 0;
+			SDL_PushEvent(&down_event);
+			SDL_Event up_event;
+			up_event.type = SDL_KEYUP;
+			up_event.key.keysym.sym = SDLK_DELETE;
+			up_event.key.keysym.mod = 0;
+			SDL_PushEvent(&up_event);
+		}
+		int i=0;
+		while (text[i]!=0 && i<599) {
+			SDL_Event textinput_event;
+			textinput_event.type = SDL_TEXTINPUT;
+			textinput_event.text.text[0] = text[i];
+			textinput_event.text.text[1] = 0;
+			SDL_PushEvent(&textinput_event);
+			i++;
+		}
+	}
+}
+
+static void rescaleAnalog(int *x, int *y, int dead) {
+	//radial and scaled deadzone
+	//http://www.third-helix.com/2013/04/12/doing-thumbstick-dead-zones-right.html
+
+	float analogX = (float) *x;
+	float analogY = (float) *y;
+	float deadZone = (float) dead;
+	float maximum = 32768.0f;
+	float magnitude = sqrt(analogX * analogX + analogY * analogY);
+	if (magnitude >= deadZone)
+	{
+		float scalingFactor = maximum / magnitude * (magnitude - deadZone) / (maximum - deadZone);		
+		*x = (int) (analogX * scalingFactor);
+		*y = (int) (analogY * scalingFactor);
+	} else {
+		*x = 0;
+		*y = 0;
+	}
+}

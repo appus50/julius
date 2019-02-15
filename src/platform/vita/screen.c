@@ -8,11 +8,18 @@
 
 // SDL_log
 #include <SDL.h>
+static SDL_Renderer *my_renderer;
+static SDL_Window *my_window;
+
 
 vita2d_texture *tex_buffer = NULL;
 
 int platform_screen_create(const char *title)
 {
+    if (!my_window)
+        my_window = SDL_CreateWindow("Dummy window used only as event listener", 0, 0, 960, 544, 0);
+    if (!my_renderer)
+        my_renderer = SDL_CreateRenderer(my_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     SDL_Log("Creating empty texture\n");
     tex_buffer = vita2d_create_empty_texture_format(960, 544, SCE_GXM_TEXTURE_FORMAT_X8U8U8U8_1RGB);
     SDL_Log("Creating empty texture: done\n");
@@ -22,6 +29,10 @@ int platform_screen_create(const char *title)
 
 void platform_screen_destroy(void)
 {
+    if (my_renderer)
+        SDL_DestroyRenderer(my_renderer);
+    if (my_window)
+        SDL_DestroyWindow(my_window);
 }
 
 int platform_screen_resize(int width, int height)
