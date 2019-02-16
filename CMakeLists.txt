@@ -470,7 +470,7 @@ if (VITA_BUILD)
         SceTouch_stub
         ScePower_stub
         ScePgf_stub
-        SceAppmgr_stub
+        SceAppMgr_stub
     )
 
     vita_create_self(${SHORT_NAME}.self ${SHORT_NAME} UNSAFE UNCOMPRESSED)
