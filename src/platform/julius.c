@@ -297,7 +297,7 @@ static void main_loop(void)
         /* Process event queue */
 #ifdef __vita__
         PSP2_FinishSimulatedMouseClicks();
-        PSP2_HandleJoystickMouse();
+        PSP2_HandleAnalogSticks();
         PSP2_HandleVirtualKeyboard();
         PSP2_HandleRepeatKeys();
         while (PSP2_PollEvent(&event)) {

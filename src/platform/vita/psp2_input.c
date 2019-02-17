@@ -199,15 +199,15 @@ void PSP2_HandleRepeatKeys() {
 	}
 }
 
-void PSP2_HandleJoystickMouse() {
+void PSP2_HandleAnalogSticks() {
 	if (!joy) {
 		joy = SDL_JoystickOpen(0);
 	}
-	int analogX = SDL_JoystickGetAxis(joy, 0);
-	int analogY = SDL_JoystickGetAxis(joy, 1);
-	rescaleAnalog( &analogX, &analogY, 3000);
-	hiresDX += analogX;
-	hiresDY += analogY;
+	int lX = SDL_JoystickGetAxis(joy, 0);
+	int lY = SDL_JoystickGetAxis(joy, 1);
+	rescaleAnalog( &lX, &lY, 3000);
+	hiresDX += lX;
+	hiresDY += lY;
 
 	const int slowdown = 2048;
 
@@ -245,7 +245,77 @@ void PSP2_HandleJoystickMouse() {
 			SDL_PushEvent(&event);
 		}
 	}
-}
+
+	// map right stick to cursor keys
+	int rX = SDL_JoystickGetAxis(joy, 2);
+	int rY = SDL_JoystickGetAxis(joy, 3);
+	float rJoyDeadZoneSquared = 10240.0*10240.0;
+	float slope = 0.414214f; // tangent of 22.5 degrees for size of angular zones
+
+	if ((rX*rX + rY*rY) > rJoyDeadZoneSquared)
+	{
+		int up = 0;
+		int down = 0;
+		int left = 0;
+		int right = 0;
+
+		// upper right quadrant
+		if (rY>0 && rX>0)
+		{
+			if (rY>slope*rX)
+				up = 1;
+			if (rX>slope*rY)
+				right = 1;
+		}
+		// upper left quadrant
+		else if (rY>0 && rX<=0)
+		{
+			if (rY>slope*(-rX))
+				up = 1;
+			if ((-rX)>slope*rY)
+				left = 1;
+		}
+		// lower right quadrant
+		else if (rY<=0 && rX>0)
+		{
+			if ((-rY)>slope*rX)
+				down = 1;
+			if (rX>slope*(-rY))
+				right = 1;
+		}
+		// lower left quadrant
+		else if (rY<=0 && rX<=0)
+		{
+			if ((-rY)>slope*(-rX))
+				down = 1;
+			if ((-rX)>slope*(-rY))
+				left = 1;
+		}
+
+		if (!up_pressed && up) {
+			SDL_Event event;
+			event.type = SDL_KEYDOWN;
+			event.key.keysym.sym = SDLK_UP;
+			SDL_PushEvent(&event);
+		} else if (!down_pressed && down) {
+			SDL_Event event;
+			event.type = SDL_KEYDOWN;
+			event.key.keysym.sym = SDLK_DOWN;
+			SDL_PushEvent(&event);
+		}
+		if (!left_pressed && left) {
+			SDL_Event event;
+			event.type = SDL_KEYDOWN;
+			event.key.keysym.sym = SDLK_LEFT;
+			SDL_PushEvent(&event);
+		} else if (!right_pressed && right) {
+			SDL_Event event;
+			event.type = SDL_KEYDOWN;
+			event.key.keysym.sym = SDLK_RIGHT;
+			SDL_PushEvent(&event);
+		}
+	}
+}	
 
 void PSP2_HandleVirtualKeyboard() {
 	if (vkbd_requested) {

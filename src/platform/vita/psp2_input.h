@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 int PSP2_PollEvent(SDL_Event *event);
-void PSP2_HandleJoystickMouse(void);
+void PSP2_HandleAnalogSticks(void);
 void PSP2_HandleVirtualKeyboard(void);
 void PSP2_HandleRepeatKeys(void);
 //SDLKey getKey(Uint8 button);
