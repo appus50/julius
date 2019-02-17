@@ -6,7 +6,12 @@
 #include "graphics/graphics.h"
 #include "graphics/screen.h"
 
-static struct {
+#ifdef __SWITCH__
+extern SDL_Texture *current_cursor;
+#include "input/mouse.h"
+#endif
+
+struct {
     SDL_Window *window;
     SDL_Renderer *renderer;
     SDL_Texture *texture;
@@ -21,6 +26,10 @@ int platform_screen_create(const char *title)
 {
     int width, height;
     int fullscreen = setting_fullscreen();
+#ifdef __SWITCH__
+    fullscreen = 1;
+	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "best");
+#endif
     if (fullscreen) {
         SDL_DisplayMode mode;
         SDL_GetDesktopDisplayMode(0, &mode);
@@ -54,8 +63,11 @@ int platform_screen_create(const char *title)
             return 0;
         }
     }
-
+#ifdef __SWITCH__
+    return platform_screen_resize(960, 540);
+#else
     return platform_screen_resize(width, height);
+#endif
 }
 
 void platform_screen_destroy(void)
@@ -142,5 +154,14 @@ void platform_screen_render(void)
 {
     SDL_UpdateTexture(SDL.texture, NULL, graphics_canvas(), screen_width() * 4);
     SDL_RenderCopy(SDL.renderer, SDL.texture, NULL, NULL);
+#ifdef __SWITCH__
+    const mouse *mouse = mouse_get();
+    SDL_Rect dst;
+    dst.x = (mouse->x * 1920) / 960;
+    dst.y = (mouse->y * 1080) / 540;
+    dst.w = (32 * 1920) / 960;
+    dst.h = (32 * 1080) / 540;
+    SDL_RenderCopy(SDL.renderer, current_cursor, NULL, &dst);
+#endif
     SDL_RenderPresent(SDL.renderer);
 }

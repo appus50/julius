@@ -3,14 +3,10 @@
 #include <math.h>
 #if defined(__vita__)
 #include "psp2_kbdvita.h"
-#define displayWidth 960.0
-#define displayHeight 544.0
 #endif
 
 #if defined(__SWITCH__)
 #include "switch_kbd.h"
-#define displayWidth 1280.0
-#define displayHeight 720.0
 #endif
 #include <math.h>
 
@@ -44,19 +40,31 @@ int PSP2_PollEvent(SDL_Event *event) {
 			case SDL_JOYBUTTONDOWN:
 				if (event->jbutton.which==0) { // Only Joystick 0 controls the mouse
 					switch (event->jbutton.button) {
+#ifdef __SWITCH__
+						case PAD_TRIANGLE:
+#else
 						case PAD_SQUARE:
+#endif
 							event->type = SDL_KEYDOWN;
 							event->key.keysym.sym = SDLK_PAGEDOWN;
 							event->key.keysym.mod = 0;
 							event->key.repeat = 0;
 							break;
+#ifdef __SWITCH__
+						case PAD_SQUARE:
+#else
 						case PAD_TRIANGLE:
+#endif
 							event->type = SDL_KEYDOWN;
 							event->key.keysym.sym = SDLK_PAGEUP;
 							event->key.keysym.mod = 0;
 							event->key.repeat = 0;
 							break;
+#ifdef __SWITCH__
+						case PAD_CIRCLE:
+#else
 						case PAD_CROSS:
+#endif
 						case PAD_R: // intentional fallthrough
 							event->type = SDL_MOUSEBUTTONDOWN;
 							event->button.button = SDL_BUTTON_LEFT;
@@ -64,7 +72,11 @@ int PSP2_PollEvent(SDL_Event *event) {
 							event->button.x = lastmx;
 							event->button.y = lastmy;
 							break;
+#ifdef __SWITCH__
+						case PAD_CROSS:
+#else
 						case PAD_CIRCLE:
+#endif
 						case PAD_L: // intentional fallthrough
 							event->type = SDL_MOUSEBUTTONDOWN;
 							event->button.button = SDL_BUTTON_RIGHT;
@@ -111,19 +123,31 @@ int PSP2_PollEvent(SDL_Event *event) {
 			case SDL_JOYBUTTONUP:
 				if (event->jbutton.which==0) {// Only Joystick 0 controls the mouse
 					switch (event->jbutton.button) {
+#ifdef __SWITCH__
+						case PAD_TRIANGLE:
+#else
 						case PAD_SQUARE:
+#endif
 							event->type = SDL_KEYUP;
 							event->key.keysym.sym = SDLK_PAGEDOWN;
 							event->key.keysym.mod = 0;
 							event->key.repeat = 0;
 							break;
+#ifdef __SWITCH__
+						case PAD_SQUARE:
+#else
 						case PAD_TRIANGLE:
+#endif
 							event->type = SDL_KEYUP;
 							event->key.keysym.sym = SDLK_PAGEUP;
 							event->key.keysym.mod = 0;
 							event->key.repeat = 0;
 							break;
+#ifdef __SWITCH__
+						case PAD_CIRCLE:
+#else
 						case PAD_CROSS:
+#endif
 						case PAD_R: // intentional fallthrough
 							event->type = SDL_MOUSEBUTTONUP;
 							event->button.button = SDL_BUTTON_LEFT;
@@ -131,7 +155,11 @@ int PSP2_PollEvent(SDL_Event *event) {
 							event->button.x = lastmx;
 							event->button.y = lastmy;
 							break;
+#ifdef __SWITCH__
+						case PAD_CROSS:
+#else
 						case PAD_CIRCLE:
+#endif
 						case PAD_L: // intentional fallthrough
 							event->type = SDL_MOUSEBUTTONUP;
 							event->button.button = SDL_BUTTON_RIGHT;

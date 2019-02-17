@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifdef __vita__
+#if defined(__vita__) || defined(__SWITCH__)
 #include "platform/vita/psp2_input.h"
 #include "platform/vita/psp2_touch.h"
 #endif
@@ -25,7 +25,7 @@
 #include <string.h>
 #endif
 
-#if defined(__GNUC__) && !defined(__MINGW32__) && !defined(__OpenBSD__) && !defined(__vita__)
+#if defined(__GNUC__) && !defined(__MINGW32__) && !defined(__OpenBSD__) && !defined(__vita__) && !defined(__SWITCH__)
 #include <execinfo.h>
 #endif
 
@@ -59,7 +59,7 @@ enum {
 };
 
 static void handler(int sig) {
-#if defined(__GNUC__) && !defined(__MINGW32__) && !defined(__OpenBSD__) && !defined(__vita__)
+#if defined(__GNUC__) && !defined(__MINGW32__) && !defined(__OpenBSD__) && !defined(__vita__) && !defined(__SWITCH__)
     void *array[100];
     size_t size;
 
@@ -75,7 +75,7 @@ static void handler(int sig) {
     exit(1);
 }
 
-#if defined(_WIN32) || defined(__vita__)
+#if defined(_WIN32) || defined(__vita__) || defined(__SWITCH__)
 /* Log to separate file on windows, since we don't have a console there */
 static FILE *log_file = 0;
 
@@ -236,10 +236,11 @@ static void handle_window_event(SDL_WindowEvent *event, int *window_active)
 static void handle_event(SDL_Event *event, int *active, int *quit)
 {
     switch (event->type) {
+#ifndef __SWITCH__
         case SDL_WINDOWEVENT:
             handle_window_event(&event->window, active);
             break;
-
+#endif
         case SDL_KEYDOWN:
             platform_handle_key_down(&event->key);
             break;
@@ -295,7 +296,7 @@ static void main_loop(void)
     while (!quit) {
         SDL_Event event;
         /* Process event queue */
-#ifdef __vita__
+#if defined(__vita__) || defined(__SWITCH__)
         PSP2_FinishSimulatedMouseClicks();
         PSP2_HandleAnalogSticks();
         PSP2_HandleVirtualKeyboard();
@@ -324,7 +325,7 @@ static int init_sdl(void)
     // on Vita, need video init only to enable physical kbd/mouse and touch events
     SDL_flags |= SDL_INIT_VIDEO;
 
-#ifdef __vita__
+#if defined(__vita__) || defined(__SWITCH__)
     SDL_flags |= SDL_INIT_JOYSTICK;
 #endif
 
@@ -408,7 +409,7 @@ static void teardown(void)
 
 int main(int argc, char **argv)
 {
-    #ifdef __vita__
+    #if defined(__vita__) || defined(__SWITCH__)
     const char *custom_data_dir = NULL;
     #else
     const char *custom_data_dir = (argc > 1 && argv[1]) ? argv[1] : NULL;
