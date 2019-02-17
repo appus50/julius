@@ -44,19 +44,20 @@ int PSP2_PollEvent(SDL_Event *event) {
 			case SDL_JOYBUTTONDOWN:
 				if (event->jbutton.which==0) { // Only Joystick 0 controls the mouse
 					switch (event->jbutton.button) {
-						case PAD_L:
+						case PAD_SQUARE:
 							event->type = SDL_KEYDOWN;
 							event->key.keysym.sym = SDLK_PAGEDOWN;
 							event->key.keysym.mod = 0;
 							event->key.repeat = 0;
 							break;
-						case PAD_R:
+						case PAD_TRIANGLE:
 							event->type = SDL_KEYDOWN;
 							event->key.keysym.sym = SDLK_PAGEUP;
 							event->key.keysym.mod = 0;
 							event->key.repeat = 0;
 							break;
 						case PAD_CROSS:
+						case PAD_R: // intentional fallthrough
 							event->type = SDL_MOUSEBUTTONDOWN;
 							event->button.button = SDL_BUTTON_LEFT;
 							event->button.state = SDL_PRESSED;
@@ -64,6 +65,7 @@ int PSP2_PollEvent(SDL_Event *event) {
 							event->button.y = lastmy;
 							break;
 						case PAD_CIRCLE:
+						case PAD_L: // intentional fallthrough
 							event->type = SDL_MOUSEBUTTONDOWN;
 							event->button.button = SDL_BUTTON_RIGHT;
 							event->button.state = SDL_PRESSED;
@@ -109,19 +111,20 @@ int PSP2_PollEvent(SDL_Event *event) {
 			case SDL_JOYBUTTONUP:
 				if (event->jbutton.which==0) {// Only Joystick 0 controls the mouse
 					switch (event->jbutton.button) {
-						case PAD_L:
+						case PAD_SQUARE:
 							event->type = SDL_KEYUP;
 							event->key.keysym.sym = SDLK_PAGEDOWN;
 							event->key.keysym.mod = 0;
 							event->key.repeat = 0;
 							break;
-						case PAD_R:
+						case PAD_TRIANGLE:
 							event->type = SDL_KEYUP;
 							event->key.keysym.sym = SDLK_PAGEUP;
 							event->key.keysym.mod = 0;
 							event->key.repeat = 0;
 							break;
 						case PAD_CROSS:
+						case PAD_R: // intentional fallthrough
 							event->type = SDL_MOUSEBUTTONUP;
 							event->button.button = SDL_BUTTON_LEFT;
 							event->button.state = SDL_RELEASED;
@@ -129,6 +132,7 @@ int PSP2_PollEvent(SDL_Event *event) {
 							event->button.y = lastmy;
 							break;
 						case PAD_CIRCLE:
+						case PAD_L: // intentional fallthrough
 							event->type = SDL_MOUSEBUTTONUP;
 							event->button.button = SDL_BUTTON_RIGHT;
 							event->button.state = SDL_RELEASED;
