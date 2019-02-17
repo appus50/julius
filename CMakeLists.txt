@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 
 option(VITA_BUILD "Build for the PlayStation Vita handheld game console." OFF)
+option(SWITCH_BUILD "Build for the Nintendo Switch handheld game console." OFF)
 
 if(VITA_BUILD AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     if(DEFINED ENV{VITASDK})
@@ -8,6 +9,24 @@ if(VITA_BUILD AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     else()
         message(FATAL_ERROR "Please define VITASDK to point to your SDK path!")
     endif()
+endif()
+
+if(SWITCH_BUILD AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    set(CMAKE_SYSTEM_NAME "Generic")
+    set(DEVKITPRO $ENV{DEVKITPRO})
+    set(CMAKE_SYSTEM_PROCESSOR "armv8-a")
+    set(CMAKE_C_COMPILER "${DEVKITPRO}/devkitA64/bin/aarch64-none-elf-gcc")
+    set(CMAKE_CXX_COMPILER "${DEVKITPRO}/devkitA64/bin/aarch64-none-elf-g++")
+    set(CMAKE_ASM_COMPILER "${DEVKITPRO}/devkitA64/bin/aarch64-none-elf-as")
+    set(CMAKE_AR "${DEVKITPRO}/devkitA64/bin/aarch64-none-elf-gcc-ar" CACHE STRING "")
+    set(CMAKE_RANLIB "${DEVKITPRO}/devkitA64/bin/aarch64-none-elf-gcc-ranlib" CACHE STRING "")
+    set(CMAKE_FIND_ROOT_PATH ${DEVKITPRO} ${DEVKITPRO}/devkitA64 ${DEVKITPRO}/libnx ${DEVKITPRO}/portlibs/switch)
+    set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+    set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+    set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+    set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+    set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "Shared libs not available")
+    link_directories(${DEVKITPRO}/libnx/lib ${DEVKITPRO}/portlibs/switch/lib)
 endif()
 
 set(SHORT_NAME julius)
@@ -38,7 +57,7 @@ if (CMAKE_COMPILER_IS_GNUCC)
 endif()
 
 set(PROJECT_VERSION_MAJOR 1)
-set(PROJECT_VERSION_MINOR 0)
+set(PROJECT_VERSION_MINOR 01)
 set(PROJECT_VERSION_PATCH 0)
 set(IS_RELEASE_VERSION FALSE)
 
@@ -108,6 +127,15 @@ if (VITA_BUILD)
         ${PROJECT_SOURCE_DIR}/src/platform/vita/psp2_input.c
         ${PROJECT_SOURCE_DIR}/src/platform/vita/psp2_touch.c
         ${PROJECT_SOURCE_DIR}/src/platform/vita/psp2_kbdvita.c
+    )
+elseif (SWITCH_BUILD)
+    set(PLATFORM_FILES
+        ${PLATFORM_FILES}
+        ${PROJECT_SOURCE_DIR}/src/platform/switch/cursor.c
+        ${PROJECT_SOURCE_DIR}/src/platform/screen.c
+        ${PROJECT_SOURCE_DIR}/src/platform/vita/psp2_input.c
+        ${PROJECT_SOURCE_DIR}/src/platform/vita/psp2_touch.c
+        ${PROJECT_SOURCE_DIR}/src/platform/vita/switch_kbd.c
     )
 else()
     set(PLATFORM_FILES
@@ -426,15 +454,25 @@ add_executable(julius
     ${PROJECT_SOURCE_DIR}/res/julius.rc
 )
 
-find_package(SDL2 REQUIRED)
-find_package(SDL2_mixer REQUIRED)
-
 if(MSVC)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 endif()
 
-include_directories(${SDL2_INCLUDE_DIR})
-include_directories(${SDL2_MIXER_INCLUDE_DIR})
+if (SWITCH_BUILD)
+  include_directories(
+    ${DEVKITPRO}/portlibs/switch/include/SDL2
+    ${DEVKITPRO}/libnx/include
+    ${DEVKITPRO}/portlibs/switch/include
+    ${CMAKE_CURRENT_SOURCE_DIR}
+  )
+else()
+    find_package(SDL2 REQUIRED)
+    find_package(SDL2_mixer REQUIRED)
+    include_directories(${SDL2_INCLUDE_DIR})
+    include_directories(${SDL2_MIXER_INCLUDE_DIR})
+endif()
+
+
 
 include_directories(ext)
 include_directories(src)
@@ -481,6 +519,91 @@ if (VITA_BUILD)
         FILE res/sce_sys/livearea/contents/bg.png sce_sys/livearea/contents/bg.png
         FILE res/sce_sys/livearea/contents/startup.png sce_sys/livearea/contents/startup.png
         FILE res/sce_sys/livearea/contents/template.xml sce_sys/livearea/contents/template.xml
+    )
+elseif(SWITCH_BUILD)
+    add_executable(${SHORT_NAME}.elf
+        WIN32
+        ${PLATFORM_FILES}
+        ${CORE_FILES}
+        ${BUILDING_FILES}
+        ${CITY_FILES}
+        ${EMPIRE_FILES}
+        ${FIGURE_FILES}
+        ${FIGURETYPE_FILES}
+        ${GAME_FILES}
+        ${INPUT_FILES}
+        ${MAP_FILES}
+        ${SCENARIO_FILES}
+        ${GRAPHICS_FILES}
+        ${SOUND_FILES}
+        ${WIDGET_FILES}
+        ${WINDOW_FILES}
+        ${SMK_FILES}
+        ${PROJECT_SOURCE_DIR}/res/julius.rc
+    )
+
+    target_link_libraries (${SHORT_NAME}.elf
+        SDL2_mixer
+        SDL2
+        EGL
+        GLESv2
+        glapi
+        drm_nouveau
+        png
+        jpeg
+        vorbisidec
+        mikmod
+        modplug
+        mpg123
+        FLAC
+        ogg
+        jpeg
+        png
+        freetype
+        m
+        z
+        nx
+        stdc++
+    )
+
+    set(FLAGS
+      -D__SWITCH__
+      -Wno-write-strings
+
+      -march=armv8-a
+      -mtune=cortex-a57
+      -mtp=soft
+  #-fPIE is neccessary to prevent crash on startup
+      -fPIE
+      -fno-asynchronous-unwind-tables
+      -funroll-loops
+      -fno-unwind-tables
+      -fno-optimize-sibling-calls
+      -mlittle-endian
+      -ffunction-sections
+    )
+
+    foreach(flag ${FLAGS})
+      set(FLAGS_GENERAL "${FLAGS_GENERAL} ${flag}")
+    endforeach(flag ${FLAGS})
+
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${FLAGS_GENERAL} -specs=${DEVKITPRO}/libnx/switch.specs --verbose")
+
+    target_compile_options(${SHORT_NAME}.elf PRIVATE ${FLAGS})
+    add_custom_target(${SHORT_NAME}.nro
+      DEPENDS ${SHORT_NAME}.elf
+      COMMAND ${DEVKITPRO}/tools/bin/nacptool --create "${SHORT_NAME}" "rsn8887" "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}" ${SHORT_NAME}.nacp
+      COMMAND ${DEVKITPRO}/tools/bin/elf2nro ${SHORT_NAME}.elf ${SHORT_NAME}.nro --icon=${CMAKE_SOURCE_DIR}/res/switchdata/icon0.jpg --nacp=${SHORT_NAME}.nacp
+    )
+    add_custom_target(${SHORT_NAME}_switch.zip
+      DEPENDS ${SHORT_NAME}.nro
+      COMMAND rm -rf ${CMAKE_BINARY_DIR}/release/${SHORT_NAME}
+      COMMAND mkdir -p ${CMAKE_BINARY_DIR}/release/${SHORT_NAME}
+      COMMAND cp -f ${CMAKE_BINARY_DIR}/${SHORT_NAME}.nro ${CMAKE_BINARY_DIR}/release/${SHORT_NAME}/${SHORT_NAME}.nro
+   #   COMMAND unzip ${CMAKE_SOURCE_DIR}/switchdata/data.zip -d${CMAKE_BINARY_DIR}/release/
+      COMMAND cd ${CMAKE_BINARY_DIR}/release && zip -r ../${SHORT_NAME}_${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}_switch.zip ${SHORT_NAME} && cd ${CMAKE_BINARY_DIR}
+      COMMAND zip -d ${SHORT_NAME}_${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}_switch.zip *.DS_Store
+      COMMAND zip -d ${SHORT_NAME}_${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}_switch.zip *__MAC*
     )
 else()
     target_link_libraries (${SHORT_NAME} ${SDL2_LIBRARY} ${SDL2_MIXER_LIBRARY})

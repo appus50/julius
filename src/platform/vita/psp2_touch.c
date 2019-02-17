@@ -9,8 +9,8 @@
 
 #if defined(__SWITCH__)
 #define SCE_TOUCH_PORT_MAX_NUM 1
-#define displayWidth 1280.0
-#define displayHeight 720.0
+#define displayWidth 960.0
+#define displayHeight 540.0
 #endif
 
 #include "psp2_touch.h"
@@ -308,10 +308,17 @@ static void preprocessFingerMotion(SDL_Event *event) {
 					y = 0;
 					yrel = 0 - lastmy;
 				}
+#ifdef __SWITCH__
+				if (y > 540) {
+					y = 540;
+					yrel = 540 - lastmy;
+				}
+#else
 				if (y > 544) {
 					y = 544;
 					yrel = 544 - lastmy;
 				}
+#endif
 				event->type = SDL_MOUSEMOTION;
 				event->motion.x = x;
 				event->motion.y = y;

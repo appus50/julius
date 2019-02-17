@@ -41,6 +41,8 @@ void PSP2_HandleRepeatKeys(void);
 #define PAD_START 10 // +
 #define PAD_L 6
 #define PAD_R 7
+#define PAD_ZL 8
+#define PAD_ZR 9
 #endif
 
 #ifdef __cplusplus

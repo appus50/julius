@@ -41,8 +41,11 @@ static void load_default_settings(void)
 {
     data.fullscreen = 1;
     data.window_width = 960;
+#ifdef __SWITCH__
+    data.window_height = 540;
+#else
     data.window_height = 544;
-
+#endif
     data.sound_effects.enabled = 1;
     data.sound_effects.volume = 100;
     data.sound_music.enabled = 1;
