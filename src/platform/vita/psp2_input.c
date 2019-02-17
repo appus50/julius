@@ -251,8 +251,8 @@ void PSP2_HandleAnalogSticks() {
 	}
 
 	// map right stick to cursor keys
-	int rX = SDL_JoystickGetAxis(joy, 2);
-	int rY = SDL_JoystickGetAxis(joy, 3);
+	float rX = SDL_JoystickGetAxis(joy, 2);
+	float rY = -1 * SDL_JoystickGetAxis(joy, 3);
 	float rJoyDeadZoneSquared = 10240.0*10240.0;
 	float slope = 0.414214f; // tangent of 22.5 degrees for size of angular zones
 
