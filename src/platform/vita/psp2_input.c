@@ -209,7 +209,7 @@ void PSP2_HandleAnalogSticks() {
 	hiresDX += lX;
 	hiresDY += lY;
 
-	const int slowdown = 2048;
+	const int slowdown = 4096;
 
 	if (hiresDX != 0 || hiresDY != 0) {
 		int xrel = hiresDX / slowdown;
