@@ -573,6 +573,7 @@ elseif(SWITCH_BUILD)
       -march=armv8-a
       -mtune=cortex-a57
       -mtp=soft
+      -O2
   #-fPIE is neccessary to prevent crash on startup
       -fPIE
       -fno-asynchronous-unwind-tables
