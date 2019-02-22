@@ -409,6 +409,10 @@ static void teardown(void)
 int main(int argc, char **argv)
 {
     #ifdef __vita__
+    scePowerSetArmClockFrequency(444);
+    scePowerSetBusClockFrequency(222);
+    scePowerSetGpuClockFrequency(222);
+    scePowerSetGpuXbarClockFrequency(166);    
     const char *custom_data_dir = NULL;
     #else
     const char *custom_data_dir = (argc > 1 && argv[1]) ? argv[1] : NULL;
