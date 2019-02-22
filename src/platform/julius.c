@@ -436,6 +436,12 @@ static void teardown(void)
 
 int main(int argc, char **argv)
 {
+    #ifdef __vita__
+    scePowerSetArmClockFrequency(444);
+    scePowerSetBusClockFrequency(222);
+    scePowerSetGpuClockFrequency(222);
+    scePowerSetGpuXbarClockFrequency(166);
+    #endif
     const char *custom_data_dir = NULL;
     for (int i = 1; i < argc; i++) {
         // we ignore "-psn" arguments, this is needed to launch the app
