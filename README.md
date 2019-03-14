@@ -69,6 +69,7 @@ make julius_switch.zip -j12
 Changelog
 =====
 v1.02
+- Compile with latest source, should hopefully fix crashes with video playback
 - Hold ZR/ZL for slow/fast mouse, useful for precise pointer control with left analog stick
 - Implement direct touch mode where pointer jumps to finger directly (press minus to toggle)
 
