@@ -47,7 +47,7 @@ ZL = hold to speed up analog stick mouse pointer
 X = Simulate `Pg. Up` keypress (speed up in-game time)
 Y = Simulate `Pg. Down` keypress (slow down in-game time)
 Plus = Bring up on-screen keyboard, useful to enter player name etc.
-Select = Toggle between direct touch mode (pointer jumps to finger, nothing else) and touchpad mode (drag pointer with finger, tap for single clicke etc.)
+Select = Toggle between direct touch mode (pointer jumps to finger, nothing else) and touchpad mode (drag pointer with finger, tap for single clicks etc.)
 
 Touch controls
 ======
