@@ -1,4 +1,5 @@
 #include "switch_input.h"
+#include "switch_touch.h"
 #include "switch.h"
 #include <math.h>
 
@@ -27,6 +28,7 @@ enum {
 
 int last_mouse_x = 0;
 int last_mouse_y = 0;
+int touch_mode = TOUCH_MODE_TOUCHPAD;
 
 static SDL_Joystick *joy = NULL;
 
@@ -87,6 +89,9 @@ int switch_poll_event(SDL_Event *event)
 {
     int ret = SDL_PollEvent(event);
     if(event != NULL) {
+        if (touch_mode != TOUCH_MODE_ORIGINAL) {
+            switch_handle_touch(event);
+        }
         switch (event->type) {
             case SDL_MOUSEMOTION:
                 // update joystick / touch mouse coords
@@ -124,6 +129,10 @@ int switch_poll_event(SDL_Event *event)
                         break;
                     case SWITCH_PAD_PLUS:
                         vkbd_requested = 1;
+                        break;
+                    case SWITCH_PAD_MINUS:
+                        touch_mode++;
+                        touch_mode %= NUM_TOUCH_MODES;
                         break;
                     default:
                         break;

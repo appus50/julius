@@ -18,6 +18,7 @@
 
 #if defined(__SWITCH__)
 #include "platform/switch/switch_input.h"
+#include "platform/switch/switch_touch.h"
 #endif
 
 #ifdef __vita__
@@ -305,6 +306,7 @@ static void main_loop(void)
         vita_handle_repeat_keys();
         while (vita_poll_event(&event)) {
 #elif defined(__SWITCH__)
+        switch_finish_simulated_mouse_clicks();
         switch_handle_analog_sticks();
         switch_handle_virtual_keyboard();
         switch_handle_repeat_keys();
